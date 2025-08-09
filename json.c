@@ -1,5 +1,6 @@
 #include <cjson/cJSON.h>
 #include <string.h>
+#include <sys/stat.h>
 
 char * read_file(FILE *f) {
 	px_assert(!fseek(f, 0, SEEK_END), ERROR"fseek");
@@ -25,7 +26,10 @@ FILE * open_saved(char *message, char *name, char *mode) {
 	px_assert(home, ERROR"getenv(HOME)"),
 
 	strlcat(path, home, 1024),
-	strlcat(path, "/.tegrine/saved/", 1024),
+	strlcat(path, "/.tegrine", 1024),
+	mkdir(path, 0700),
+	strlcat(path, "/saved/", 1024),
+	mkdir(path, 0700),
 	strlcat(path, name, 1024);
 
 	FILE *f = fopen(path, mode);
