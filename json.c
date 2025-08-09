@@ -55,9 +55,6 @@ void save_to_json(Tegrine *te, char *name) {
 		Instance *ins	= &te->x.x[i];
 
 		if (ins->pos.x || ins->pos.y) {
-			if (ins->pos.x == DELETED)
-				continue;
-
 			pos = cJSON_CreateObject();
 
 			if (ins->pos.x)
