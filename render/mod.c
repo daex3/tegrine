@@ -11,9 +11,9 @@ void draw_point(D2 *ws, D2 pos, RGBA *o, Instance *ins) {
 	if (within_max(&pos, ws))
 		printf(
 			"\x1b[48;2;%hhu;%hhu;%hhum\x1b[%d;%dH \x1b[m",
-			o->r,
-			o->g,
-			o->b,
+			o->r * o->a / 255,
+			o->g * o->a / 255,
+			o->b * o->a / 255,
 			1 + pos.y,
 			1 + pos.x
 		);
