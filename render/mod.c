@@ -2,6 +2,18 @@ static _Bool within_max(D2 *x, D2 *max) {
 	return x->x >= 0 && x->y >= 0 && x->x < max->x && x->y < max->y;
 }
 
+/*
+	TODO: Support of colors backward compatibility: Translation:
+		8-bit -> 4-bit
+		4-bit -> 2-bit
+		2-bit -> ASCII
+	Requires: An alternative lib than NCurses or low level ansi escape sequences to get whose colors are avaible
+		  Prob only do a parameter for it = more flexibility :P
+	
+	TODO: ASCII art indeed + possible algorithms for it: Brigthness, ...
+	TODO: Separate transparency to it's own function
+	TODO: Rotation
+*/
 void draw_point(D2 *ws, D2 pos, RGBA *o, Instance *ins) {
 	// Adjust according to instance
 	if (ins)
@@ -11,6 +23,7 @@ void draw_point(D2 *ws, D2 pos, RGBA *o, Instance *ins) {
 	if (within_max(&pos, ws))
 		printf(
 			"\x1b[48;2;%hhu;%hhu;%hhum\x1b[%d;%dH \x1b[m",
+			// TODO: This isn't transparency but faintness .-.
 			o->r * o->a / 255,
 			o->g * o->a / 255,
 			o->b * o->a / 255,
@@ -19,14 +32,14 @@ void draw_point(D2 *ws, D2 pos, RGBA *o, Instance *ins) {
 		);
 }
 
-void draw_line(D2 *ws, D2 a, D2 b, Instance *ins) {
+void draw_line(D2 *ws, D2 a, D2 b, RGBA *color, Instance *ins) {
 	// Bresenham's Line Algorithm
 	int	dx	= abs(b.x - a.x),	dy = abs(b.y - a.y),
 		sx	= a.x < b.x ? 1 : -1,	sy = a.y < b.y ? 1 : -1,
 		err	= dx - dy;
 
 	for(;;) {
-		draw_point(ws, a, &ins->color, ins);
+		draw_point(ws, a, color, ins);
 
 		if (a.x == b.x && a.y == b.y)
 			break;

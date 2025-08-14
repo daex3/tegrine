@@ -1,124 +1,127 @@
-#include <stdio.h>
-#include <stdint.h>
+#include <stddef.h>
+#include <string.h>
 #include <stdlib.h>
 #include <sys/ioctl.h>
-#include <string.h>
 #include <pixels_px.c>
 
-size_t min_size(size_t x, size_t m) {
+
+int min_size(int x, int m) {
 	return x < m ? m : x;
 }
 
-#define FUNC_VEC(name, inner_type, m0, m1, m2, ...)						\
-	inner_type * add_##inner_type(name *x, __VA_ARGS__) {					\
-		if (x->len >= x->max)								\
-			px_assert(								\
-				x->x = realloc(							\
-					x->x,							\
-					(x->max = min_size(x->len * 3, 64)) * sizeof(inner_type)\
-				),								\
-				ERROR"realloc"							\
-			);									\
-												\
-		inner_type *v = &x->x[x->len++];						\
-												\
-		*v = (inner_type){ m0, m1, m2 };						\
-												\
-		return v;									\
-	}
 
-#define INIT_VEC(name, inner_type, m0, m1, m2, ...)	\
-	typedef struct {				\
-		inner_type *x;				\
-		size_t len, max;			\
-	} name;						\
-							\
-	FUNC_VEC(name, inner_type, m0, m1, m2, __VA_ARGS__)
+#define DOT		\
+	D2	pos;	\
+			\
+	RGBA color;
 
 
 #ifdef VERTEX
-// Easily specify vertices
 typedef struct {
-	D2 pos;
-	size_t neighbor;
+	DOT
+
+	int neighbor;
 } Vertice;
-
-
-INIT_VEC(
-	Vertex,
-	Vertice,
-	*pos,
-	neighbor,,
-	D2 *pos,
-	size_t neighbor
-)
 #endif
 
-#ifdef PIXELS
-#include <pixels_px.c>
-
-
-FUNC_VEC(
-	Pixels,
-	Px,
-	*pos,
-	*color,,
-	D2 *pos,
-	RGBA *color
-)
-#endif
 
 #ifdef SHAPES
-// Just a shape :P
+typedef struct {
+	DOT
+
+	D2 size;
+	int n;
+} Shape;
+#endif
+
+
+#define FUNC_VEC(name, inner_type, free_e, m1, m2, m3, m4, ...)								\
+	static void realloc_##name(name *x) {										\
+		if (x->len >= x->max)											\
+			px_assert(											\
+				(x->x = realloc(									\
+					x->x,										\
+					(x->max = min_size(								\
+						x->len * 3,								\
+						64									\
+					)) * sizeof(inner_type))							\
+				),											\
+				ERROR"realloc"										\
+			);												\
+	}														\
+															\
+	inner_type * add_##inner_type(name *x, __VA_ARGS__) {								\
+		realloc_##name(x);											\
+															\
+		inner_type *p = &x->x[x->len++];									\
+															\
+		*p = (inner_type){ };											\
+															\
+		m1;													\
+		m2;													\
+		m3;													\
+		m4;													\
+															\
+		return p;												\
+	}														\
+															\
+	void remove_##inner_type(name *x, int i) {									\
+		free_e;													\
+		/* Fuck double free now i'd rather SEGFAULT */								\
+		x->x[i] = (inner_type){ };										\
+															\
+		memmove(i + x->x, i + x->x + 1, (--x->len - i) * sizeof(inner_type));					\
+	}
+
+#define INIT_VEC(name, inner_type, free_e, m1, m2, m3, m4, ...)	\
+	typedef struct {					\
+		inner_type *x;					\
+		int len, max;				\
+	} name;							\
+								\
+	FUNC_VEC(name, inner_type, free_e, m1, m2, m3, m4, __VA_ARGS__)
+
+#ifdef PIXELS
+FUNC_VEC(Pixels,	Px,,		p->pos = *pos, p->color = *color,,,				D2 *pos, RGBA *color)
+#endif
+#ifdef VERTEX
+INIT_VEC(Vertex,	Vertice,,	p->pos = *pos, p->color = *color, p->neighbor = neighbor,,	D2 *pos, RGBA *color, int neighbor)
+#endif
+#ifdef SHAPES
+INIT_VEC(Shapes,	Shape,,		p->pos = *pos, p->color = *color, p->n = n, p->size = *size,	D2 *pos, D2 *size, RGBA *color, int n)
+#endif
+
+// Forward declaration can't fix this chaos :)
 typedef struct {
 	D2	pos,
 		size;
-	int type;
-} Shape;
 
-
-INIT_VEC(
-	Shapes,
-	Shape,
-	*pos,
-	*size,
-	type,
-	D2 *pos,
-	D2 *size,
-	int type
-)
-#endif
-
-
-// Root: Most important
-typedef struct {
-#ifdef VERTEX
-	Vertex vertex;
-#endif
 #ifdef PIXELS
 	Pixels pixels;
+#endif
+#ifdef VERTEX
+	Vertex vertex;
 #endif
 #ifdef SHAPES
 	Shapes shapes;
 #endif
-
-	D2	pos,
-		size;
-
-	RGBA color;
 } Instance;
 
+void free_instance(Instance *x) {
+#ifdef PIXELS
+	free(x->pixels.x),
+#endif
+#ifdef VERTEX
+	free(x->vertex.x),
+#endif
+#ifdef SHAPES
+	free(x->shapes.x),
+#endif
 
-INIT_VEC(
-	Instances,
-	Instance,
-	.color = *color,
-	.pos   = *pos,
-	.size  = *size,
-	D2 *pos,
-	D2 *size,
-	RGBA *color
-)
+	*x = (Instance){ };
+}
+
+INIT_VEC(Instances,	Instance,	free_instance,	p->pos = *pos, p->size = *size,,,		D2 *pos, D2 *size)
 
 
 // Terminal window size (grid)
@@ -132,9 +135,11 @@ void set_ws(D2 *ws) {
 
 void resize_instance(Instance *x, D2 *new) {
 	x->size.x = new->x,
-	x->size.y = new->y,
+	x->size.y = new->y;
 
+#ifdef PIXELS
 	resize_pixels(&x->pixels, new);
+#endif
 }
 
 
@@ -143,45 +148,19 @@ typedef struct {
 	Instances x;
 } Tegrine;
 
-void free_instance(Instance *x) {
-#ifdef VERTEX
-	if (x->vertex.x)
-		free(x->vertex.x);
-#endif
-
-#ifdef PIXELS
-	if (x->pixels.x)
-		free(x->pixels.x);
-#endif
-
-#ifdef SHAPES
-	if (x->shapes.x)
-		free(x->shapes.x);
-#endif
-
-	*x = (Instance){ };
-}
-
 // Deallocate
 void free_tegrine(Tegrine *x) {
-	for(size_t i = 0; i < x->x.len; ++i)
-		free_instance(&x->x.x[i]);
+	Instances *y = &x->x;
 
-	free(x->x.x);
+	for(int i = 0; i < y->len; ++i)
+		free_instance(y->x);
+
+	free(y->x),
+	*y = (Instances){ };
+	// :shrugh:
+	//*x = (Tegrine){ };
 }
 
-void remove_instance(Tegrine *x, size_t i) {
-	if (i >= x->x.len)
-		return;
-
-	// Shifting to the left
-	free_instance(&x->x.x[i]),
-	memcpy(
-		x->x.x		+ i,
-		x->x.x		+ i + 1,
-		--x->x.len	- i * sizeof(Instance)
-	);
-}
 
 #ifdef VERTEX
 void draw_vertex(D2 *, Vertex *, Instance *);
@@ -199,7 +178,5 @@ void draw_shapes(D2 *, Shapes *, Instance *);
 	s x   = calloc((s max = size), sizeof(type)),	\
 	s len = 0,					\
 	px_assert(s x, ERROR"calloc")
-
-#define DELETED 999999999
 
 #include <tegrine/render/mod.c>

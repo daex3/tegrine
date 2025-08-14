@@ -1,6 +1,6 @@
 #include <math.h>
 
-#define PI_2 M_PI * 2
+static const float pi_2 = M_PI * 2;
 
 void draw_shapes(D2 *ws, Shapes *sha, Instance *ins) {
 	for(size_t i = 0; i < sha->len; ++i) {
@@ -11,7 +11,7 @@ void draw_shapes(D2 *ws, Shapes *sha, Instance *ins) {
 			sh->size.y + b.y
 		};
 
-		switch (sh->type) {
+		switch (sh->n) {
 			// Full rectangle |=|
 			case 1: {
 				b.y -= sh->size.y;
@@ -20,7 +20,7 @@ void draw_shapes(D2 *ws, Shapes *sha, Instance *ins) {
 
 				for(; b.y < lim.y; ++b.y)
 					for(b.x = o_x; b.x < lim.x; ++b.x)
-						draw_point(ws, b, &ins->color, ins);
+						draw_point(ws, b, &sh->color, ins);
 			}
 			break;
 			// Triangle /\_
@@ -29,26 +29,27 @@ void draw_shapes(D2 *ws, Shapes *sha, Instance *ins) {
 
 				b.y -= sh->size.y,
 
-				draw_line(ws, b, d, ins),
+				draw_line(ws, b, d, &sh->color, ins),
 
 				d.x = sh->pos.x + sh->size.x,
 
-				draw_line(ws, b, d, ins),
+				draw_line(ws, b, d, &sh->color, ins),
 
 				b.x = sh->pos.x - sh->size.x,
 				b.y = sh->pos.y + sh->size.y;
 
 				for(; b.x < lim.x; ++b.x)
-					draw_point(ws, b, &ins->color, ins);
+					draw_point(ws, b, &sh->color, ins);
 			}
 			break;
 			// Circle O
+			// TODO: Adjust i varying on the size
 			case 3:
-				for(float i = 0; i < PI_2; i += .01)
+				for(float i = 0; i < pi_2; i += .01)
 					b.x = sh->pos.x + cos(i) * sh->size.x,
 					b.y = sh->pos.y + sin(i) * sh->size.y,
 
-					draw_point(ws, b, &ins->color, ins);
+					draw_point(ws, b, &sh->color, ins);
 
 				break;
 		}
