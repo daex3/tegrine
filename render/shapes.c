@@ -1,6 +1,6 @@
 #include <math.h>
 
-static const float pi_2 = M_PI * 2;
+static const float PI_O = 6.28;
 
 void draw_shapes(D2 *ws, Shapes *sha, Instance *ins) {
 	for(size_t i = 0; i < sha->len; ++i) {
@@ -45,7 +45,7 @@ void draw_shapes(D2 *ws, Shapes *sha, Instance *ins) {
 			// Circle O
 			// TODO: Adjust i varying on the size
 			case 3:
-				for(float i = 0; i < pi_2; i += .01)
+				for(float i = 0; i < PI_O; i += .01)
 					b.x = sh->pos.x + cos(i) * sh->size.x,
 					b.y = sh->pos.y + sin(i) * sh->size.y,
 
