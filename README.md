@@ -17,9 +17,9 @@ int main() {
 	Tegrine te = { };
 	D2 pos = { }, size = { };
 	RGBA color = { };
-	Instance *p = add_Instance(te.x, pos, size);
+	Instance *p = add_Instance(te.x.x, &pos, &size);
 
-	add_Px(&p->pixels, pos, color);
+	add_Px(&p->pixels, &pos, &color);
 
 	free_tegrine(&te);
 }
