@@ -71,7 +71,7 @@ void draw_line(D2 *ws, D2 a, D2 b, RGBA *color, Instance *ins) {
 void draw(Tegrine *te, D2 *pos) {
 	fputs("\x1b[2J", stdout);
 
-	for(size_t i = 0; i < te->x.len; ++i) {
+	for(int i = 0; i < te->x.len; ++i) {
 		Instance *ins = &te->x.x[i];
 
 #ifdef SHAPES

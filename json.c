@@ -6,7 +6,7 @@ static char * read_file(FILE *f) {
 	px_assert(!fseek(f, 0, SEEK_END), ERROR"fseek");
 
 	long len = ftell(f);
-	char *s = malloc(len);
+	char *s = calloc(len, 1);
 
 	px_assert(len != -1, ERROR"ftell"),
 	px_assert(s, ERROR"malloc"),
@@ -215,7 +215,7 @@ static void read_d2(D2 *x, cJSON *r, char *name) {
 	if (ve_x && ve_len) {								\
 		type *ve = &px;								\
 											\
-		SET(ve->, ve_len->valueint, type);					\
+		SET(ve->, ve_len->valueint, inner_t);					\
 											\
 		cJSON_ArrayForEach(v_r, ve_x) {						\
 			inner_t *v = &ve->x[ve->len++];					\
