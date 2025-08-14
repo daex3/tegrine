@@ -66,6 +66,9 @@ typedef struct {
 	}														\
 															\
 	void remove_##inner_type(name *x, int i) {									\
+		if (i >= x->len)											\
+			return;												\
+															\
 		free_e;													\
 		/* Fuck double free now i'd rather SEGFAULT */								\
 		x->x[i] = (inner_type){ };										\
@@ -156,9 +159,8 @@ void free_tegrine(Tegrine *x) {
 		free_instance(y->x);
 
 	free(y->x),
-	*y = (Instances){ };
-	// :shrugh:
-	//*x = (Tegrine){ };
+	*y = (Instances){ },
+	*x = (Tegrine){ };
 }
 
 

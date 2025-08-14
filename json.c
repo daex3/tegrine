@@ -241,6 +241,7 @@ void load_from_json(Tegrine *te, char *name) {
 
 	// TODO: Append to existing one instead
 	free_tegrine(te),
+	set_ws(&te->ws),
 	free(s),
 	SET(te->x., len->valueint, Instance);
 
